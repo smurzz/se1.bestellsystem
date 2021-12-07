@@ -1,5 +1,6 @@
 package system.impl;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -137,7 +138,9 @@ class PrinterImpl implements Printer {
 	 */
 
 	public void printOrdersToFile(Iterable<Order> orders, String filepath) throws IOException {
-		FileWriter fw = new FileWriter (filepath);	
+		File file = new File(filepath);
+		file.getParentFile().mkdirs();
+		FileWriter fw = new FileWriter (file);	
 		fw.write(printOrders(orders).toString());
 		fw.close();
 //		throw new IOException( "not implemented." );
