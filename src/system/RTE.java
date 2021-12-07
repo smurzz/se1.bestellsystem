@@ -172,6 +172,13 @@ public interface RTE {
 		 * @return singleton instance of OrderRepository
 		 */
 		OrderRepository getOrderRepository();
+		
+		/**
+		 * Return singleton instance of OrderBuilder.
+		 * 
+		 * @return singleton instance of OrderBuilder
+		 */
+		OrderBuilder getOrderBuider();
 
 
 		/**
