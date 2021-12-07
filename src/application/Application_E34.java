@@ -10,6 +10,7 @@ import java.io.IOException;
 import datamodel.Order;
 import system.RTE;
 import system.RTE.Runtime;
+import system.impl.OrderBuilderImpl;
 
 /**
  * Class with main() function.
@@ -48,7 +49,7 @@ public class Application_E34 {
 				System.out.println( "system is running..." );
 			});
 
-		OrderBuilder ob = runtime.getOrderBuider();
+		OrderBuilderImpl ob = runtime.getOrderBuider();
 		//
 		ob.build();		// build and save orders to OrderRepository
 		

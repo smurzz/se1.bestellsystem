@@ -1,4 +1,4 @@
-package application;
+package system.impl;
 
 import system.RTE.Runtime;
 import system.DataRepository.CustomerRepository;
@@ -20,12 +20,12 @@ import system.DataRepository.OrderRepository;
  *
  */
 
-public class OrderBuilder {
+class OrderBuilderImpl {
 
 	/**
 	 * static singleton reference to OrderBuilder instance (singleton pattern).
 	 */
-	private static OrderBuilder orderBuilder_instance = null;
+	private static OrderBuilderImpl orderBuilder_instance = null;
 
 	/**
 	 * Repository dependencies.
@@ -43,9 +43,9 @@ public class OrderBuilder {
 	 * @param runtime dependency to resolve Repository dependencies.
 	 * @return
 	 */
-	public static OrderBuilder getInstance( Runtime runtime ) {
+	public static OrderBuilderImpl getInstance( Runtime runtime ) {
 		if( orderBuilder_instance == null ) {
-			orderBuilder_instance = new OrderBuilder( runtime );
+			orderBuilder_instance = new OrderBuilderImpl( runtime );
 		}
 		return orderBuilder_instance;
 	}
@@ -57,7 +57,7 @@ public class OrderBuilder {
 	 * @param runtime dependency injected from where repository
 	 * dependencies are resolved.
 	 */
-	private OrderBuilder( Runtime runtime ) {
+	private OrderBuilderImpl( Runtime runtime ) {
 		this.customerRepository = runtime.getCustomerRepository();
 		this.articleRepository = runtime.getArticleRepository();
 		this.orderRepository = runtime.getOrderRepository();
@@ -84,7 +84,7 @@ public class OrderBuilder {
 	 * @param order saved to OrderRepository
 	 * @return chainable self-reference
 	 */
-	public OrderBuilder build() {
+	public OrderBuilderImpl build() {
 
 		CustomerRepository crep = customerRepository;
 		/*
