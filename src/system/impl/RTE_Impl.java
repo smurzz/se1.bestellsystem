@@ -7,6 +7,8 @@ import java.util.function.Consumer;
 
 import system.Calculator;
 import system.DataSource;
+import system.InventoryManager;
+import system.OrderBuilder;
 import system.Printer;
 import system.RTE;
 import system.DataRepository.ArticleRepository;
@@ -123,12 +125,13 @@ class RTE_Impl implements RTE {
 		 * Calculator singleton instance.
 		 */
 		private final Calculator calculator = new CalculatorImpl();
-
+				
 		/**
 		 * Printer instance used by Runtime instance.
 		 */
 		private final Printer printer = new PrinterImpl( calculator );
-
+		
+		
 		/**
 		 * DataRepository implementations used by Runtime instance.
 		 */
@@ -170,7 +173,7 @@ class RTE_Impl implements RTE {
 			if( runtime != null ) {
 				runtime.accept( this );
 			}
-			return InstanceAccessor.getInstance();
+			return new RTE_Impl();
 		}
 
 
@@ -257,6 +260,30 @@ class RTE_Impl implements RTE {
 					});
 			});
 			return this;
+		}
+		
+		/**
+		 * Return singleton instance of OrderBuilder.
+		 * 
+		 * @return singleton instance of OrderBuilder
+		 */
+
+		@Override
+		public OrderBuilder getOrderBuider() {
+			// TODO Auto-generated method stub
+			return new OrderBuilderImpl( getCustomerRepository(), getArticleRepository(), getOrderRepository() );
+		}
+		
+		/**
+		 * Return singleton instance of InventoryManager.
+		 * 
+		 * @return singleton instance of InventoryManager.
+		 */
+		
+		@Override
+		public InventoryManager getInventoryManager() {
+			// TODO Auto-generated method stub
+			return null;
 		}
 	}
 }

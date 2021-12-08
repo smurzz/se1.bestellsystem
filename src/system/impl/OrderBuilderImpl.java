@@ -1,15 +1,14 @@
 package system.impl;
 
-import system.RTE.Runtime;
 import system.DataRepository.CustomerRepository;
 
 import datamodel.Article;
 import datamodel.Customer;
 import datamodel.Order;
-import system.DataRepository;
-import system.RTE;
 import system.DataRepository.ArticleRepository;
 import system.DataRepository.OrderRepository;
+import system.InventoryManager;
+import system.OrderBuilder;
 
 
 /**
@@ -20,12 +19,12 @@ import system.DataRepository.OrderRepository;
  *
  */
 
-class OrderBuilderImpl {
+class OrderBuilderImpl implements OrderBuilder{
 
 	/**
 	 * static singleton reference to OrderBuilder instance (singleton pattern).
 	 */
-	private static OrderBuilderImpl orderBuilder_instance = null;
+	private static OrderBuilder orderBuilder ;
 
 	/**
 	 * Repository dependencies.
@@ -35,7 +34,8 @@ class OrderBuilderImpl {
 	private final ArticleRepository articleRepository;
 	//
 	private final OrderRepository orderRepository;
-
+	// 
+	private final InventoryManager inventoryManager = new InventoryManagerMOCK();
 
 	/**
 	 * Provide access to RTE OrderBuilder singleton instance (singleton pattern).
@@ -43,11 +43,11 @@ class OrderBuilderImpl {
 	 * @param runtime dependency to resolve Repository dependencies.
 	 * @return
 	 */
-	public static OrderBuilderImpl getInstance( Runtime runtime ) {
-		if( orderBuilder_instance == null ) {
-			orderBuilder_instance = new OrderBuilderImpl( runtime );
+	OrderBuilder getOrderBuilder() {
+		if( orderBuilder == null ) {
+			orderBuilder = new OrderBuilderImpl( customerRepository, articleRepository, orderRepository );
 		}
-		return orderBuilder_instance;
+		return orderBuilder;
 	}
 
 
@@ -57,10 +57,10 @@ class OrderBuilderImpl {
 	 * @param runtime dependency injected from where repository
 	 * dependencies are resolved.
 	 */
-	private OrderBuilderImpl( Runtime runtime ) {
-		this.customerRepository = runtime.getCustomerRepository();
-		this.articleRepository = runtime.getArticleRepository();
-		this.orderRepository = runtime.getOrderRepository();
+	OrderBuilderImpl( CustomerRepository customerRepository, ArticleRepository articleRepository, OrderRepository orderRepository ) {
+		this.customerRepository = customerRepository;
+		this.articleRepository = articleRepository;
+		this.orderRepository = orderRepository;
 	}
 
 
@@ -72,9 +72,11 @@ class OrderBuilderImpl {
 	 */
 	public boolean accept( Order order ) {
 		// TODO: validate order
-		boolean valid = true;
-		orderRepository.save( order );
-		return valid;
+		boolean validOrder = inventoryManager.isFillable( order );
+		if ( validOrder ) {
+			orderRepository.save( order );
+		}
+		return validOrder;
 	}
 
 
@@ -84,35 +86,33 @@ class OrderBuilderImpl {
 	 * @param order saved to OrderRepository
 	 * @return chainable self-reference
 	 */
-	public OrderBuilderImpl build() {
-
-		CustomerRepository crep = customerRepository;
+	public OrderBuilder build() {
+		
 		/*
 		 * Look up customers from CustomerRepository.
 		 */
-		Customer eric = crep.findById( 892474 ).get();
-		Customer anne = crep.findById( 643270 ).get();
-		Customer tim = crep.findById( 286516 ).get();
-		Customer nadine = crep.findById( 412396 ).get();
-		Customer khaled = crep.findById( 456454 ).get();
-		Customer lena = crep.findById( 556849 ).get();
-		Customer max = crep.findById( 482596 ).get();
-		Customer brigitte = crep.findById( 660380 ).get();
-		Customer joel = crep.findById( 582596 ).get();
+		Customer eric = customerRepository.findById( 892474 ).get();
+		Customer anne = customerRepository.findById( 643270 ).get();
+		Customer tim = customerRepository.findById( 286516 ).get();
+		Customer nadine = customerRepository.findById( 412396 ).get();
+		Customer khaled = customerRepository.findById( 456454 ).get();
+		Customer lena = customerRepository.findById( 556849 ).get();
+		Customer max = customerRepository.findById( 482596 ).get();
+		Customer brigitte = customerRepository.findById( 660380 ).get();
+		Customer joel = customerRepository.findById( 582596 ).get();
 
-		ArticleRepository arep = articleRepository;
 		/*
 		 * Look up articles from ArticleRepository.
 		 */
-		Article tasse = arep.findById( "SKU-458362" ).get();
-		Article becher = arep.findById( "SKU-693856" ).get();
-		Article kanne = arep.findById( "SKU-518957" ).get();
-		Article teller = arep.findById( "SKU-638035" ).get();
-		Article buch_Java = arep.findById( "SKU-278530" ).get();
-		Article buch_OOP = arep.findById( "SKU-425378" ).get();
-		Article pfanne = arep.findById( "SKU-300926" ).get();
-		Article helm = arep.findById( "SKU-663942" ).get();
-		Article karte = arep.findById( "SKU-583978" ).get();
+		Article tasse = articleRepository.findById( "SKU-458362" ).get();
+		Article becher = articleRepository.findById( "SKU-693856" ).get();
+		Article kanne = articleRepository.findById( "SKU-518957" ).get();
+		Article teller = articleRepository.findById( "SKU-638035" ).get();
+		Article buch_Java = articleRepository.findById( "SKU-278530" ).get();
+		Article buch_OOP = articleRepository.findById( "SKU-425378" ).get();
+		Article pfanne = articleRepository.findById( "SKU-300926" ).get();
+		Article helm = articleRepository.findById( "SKU-663942" ).get();
+		Article karte = articleRepository.findById( "SKU-583978" ).get();
 
 		/*
 		 * Build orders.
