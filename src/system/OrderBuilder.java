@@ -2,6 +2,14 @@ package system;
 
 import datamodel.Order;
 
+/**
+ * Public Interface of OrderBuilder creates an OrderRepository
+ * 
+ * @since "0.1.0"
+ * @version {@value package_info#Version}
+ * @author Sofya
+ */
+
 public interface OrderBuilder {
 	/**
 	 * Validate and save order to OrderRepository, if order is accepted.
