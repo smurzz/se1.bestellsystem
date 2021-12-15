@@ -63,24 +63,26 @@ class InventoryManagerImpl implements InventoryManager {
 
 	@Override
 	public void update(String id, int updatedUnitsInStock) {
-		if(!this.inventory.containsKey(id)){
-			this.inventory.put(id, updatedUnitsInStock);
-		} else{
-			int oldUnitsInStock = this.inventory.get(id);
-			this.inventory.put(id, oldUnitsInStock + updatedUnitsInStock);
-		}
+		this.inventory.put(id, updatedUnitsInStock);
 	}
 
 	@Override
-	public boolean isFillable(Order order) {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isFillable(Order order) {	
+		return order.getItemsAsStream().allMatch(or -> or.getUnitsOrdered() <= this.inventory.get(or.getArticle().getId()));	
 	}
 
 	@Override
 	public boolean fill(Order order) {
-		// TODO Auto-generated method stub
-		return false;
+			if(isFillable(order)){
+			for(int i = 0; i < order.getItemsAsArray().length; i++){
+				String idArticle = order.getItemsAsArray()[i].getArticle().getId();
+				int orderedUnits = order.getItemsAsArray()[i].getUnitsOrdered();
+				update(idArticle, this.inventory.get(idArticle) - orderedUnits);
+			}
+			return true;
+		} else{
+			return false;
+		}
 	}
 
 	@Override
