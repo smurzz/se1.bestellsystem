@@ -58,14 +58,17 @@ class InventoryManagerImpl implements InventoryManager {
 
 	@Override
 	public int getUnitsInStock(String id) {
-		// TODO Auto-generated method stub
-		return 0;
+		return this.inventory.get(id);
 	}
 
 	@Override
 	public void update(String id, int updatedUnitsInStock) {
-		// TODO Auto-generated method stub
-
+		if(!this.inventory.containsKey(id)){
+			this.inventory.put(id, updatedUnitsInStock);
+		} else{
+			int oldUnitsInStock = this.inventory.get(id);
+			this.inventory.put(id, oldUnitsInStock + updatedUnitsInStock);
+		}
 	}
 
 	@Override
