@@ -8,7 +8,7 @@
  * </p>
  * 
  * @author Sofya
- * @version 0.1.0
+ * @version 0.1.2
  */
 
 module se1.bestellsystem {

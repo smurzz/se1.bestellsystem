@@ -29,7 +29,7 @@ class InventoryManagerImpl implements InventoryManager {
 	private final DataRepository.ArticleRepository articleRepository;
 	
 	/**
-	 * internal data structure to manage inventory (unitsInStore) by Article‐id's.
+	 * internal data structure to manage inventory (unitsInStore) by Article id's.
 	 */
 	private final Map<String, Integer> inventory;
 
