@@ -6,14 +6,14 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import system.Calculator;
-import system.DataSource;
-import system.InventoryManager;
-import system.OrderBuilder;
 import system.Printer;
 import system.RTE;
 import system.DataRepository.ArticleRepository;
 import system.DataRepository.CustomerRepository;
 import system.DataRepository.OrderRepository;
+import system.InventoryManager;
+import system.OrderBuilder;
+
 //
 import static system.RTE.Configuration.KEY_DATASOURCE;
 import static system.RTE.Configuration.JSON_DATASOURCE;
@@ -24,10 +24,6 @@ import static system.RTE.Configuration.KEY_DATASOURCE_ORDER;
 
 /**
  * Local implementation of RTE (Runtime Environment) interface.
- * 
- * @since "0.1.0"
- * @version {@value package_info#Version}
- * @author Sofya
  *
  */
 
@@ -56,8 +52,10 @@ class RTE_Impl implements RTE {
 	 * key-value store for configuration properties from java.util.Properties.
 	 *
 	 */
+
 	@SuppressWarnings("serial")
 	private class ConfigImpl extends Properties implements Configuration {
+
 
 		/**
 		 * Store configuration Property as String key-value pair.
@@ -103,6 +101,7 @@ class RTE_Impl implements RTE {
 			}
 			return rti;
 		}
+
 	}
 
 
@@ -113,7 +112,6 @@ class RTE_Impl implements RTE {
 	 *
 	 */
 
-	@SuppressWarnings("serial")
 	private class RuntimeInstance implements Runtime {
 
 		/**
@@ -125,17 +123,25 @@ class RTE_Impl implements RTE {
 		 * Calculator singleton instance.
 		 */
 		private final Calculator calculator = new CalculatorImpl();
-				
+
 		/**
 		 * Printer instance used by Runtime instance.
+		 * 
+		 * Has a dependency on Calculator.
 		 */
-		private final Printer printer = new PrinterImpl( calculator );
-		
-		
+		private final Printer printer;
+
 		/**
 		 * DataRepository implementations used by Runtime instance.
 		 */
 		private final DataRepositoryImpl dataRepositoryImpl = new DataRepositoryImpl();
+
+		/**
+		 * InventoryManager implementation used by Runtime instance.
+		 * 
+		 * Has a dependency on ArticleRepository.
+		 */
+		private final InventoryManager inventoryManager;
 
 
 		/**
@@ -143,10 +149,18 @@ class RTE_Impl implements RTE {
 		 * 
 		 * @param config Configuration to configure Runtime instance.
 		 */
+
 		private RuntimeInstance( final Configuration config ) {
 			if( config == null )
 				throw new IllegalArgumentException( "config: null" );
 			this.config = config;
+			//
+			Calculator calculator = getCalculator();
+			this.printer = new PrinterImpl( calculator );	// inject dependency
+			//
+			ArticleRepository articleRepository = dataRepositoryImpl.getArticleRepository();
+			this.inventoryManager = InventoryManagerImpl
+					.getInstance( articleRepository );		// inject dependency
 		}
 
 		/**
@@ -154,11 +168,11 @@ class RTE_Impl implements RTE {
 		 * 
 		 * @return Configuration.
 		 */
+
 		@Override
 		public Configuration getConfiguration() {
 			return config;
 		}
-		
 
 		/**
 		 * Shutting down Runtime instance.
@@ -168,12 +182,13 @@ class RTE_Impl implements RTE {
 		 * 
 		 * @throws RuntimeException thrown with errors during shutdown
 		 */
+
 		@Override
 		public RTE shutdown( Consumer<Runtime> runtime ) throws RuntimeException {
 			if( runtime != null ) {
 				runtime.accept( this );
 			}
-			return new RTE_Impl();
+			return InstanceAccessor.getInstance();
 		}
 
 
@@ -182,62 +197,69 @@ class RTE_Impl implements RTE {
 		 * 
 		 * @return singleton calculator instance.
 		 */
+
 		@Override
 		public Calculator getCalculator() {
 			return calculator;
 		}
-
 
 		/**
 		 * Return singleton printer instance.
 		 * 
 		 * @return singleton printer instance.
 		 */
+
 		@Override
 		public Printer getPrinter() {
 			return printer;
 		}
-
 
 		/**
 		 * Return singleton instance of CustomerRepository.
 		 * 
 		 * @return singleton instance of CustomerRepository
 		 */
+
 		@Override
 		public CustomerRepository getCustomerRepository() {
 			return dataRepositoryImpl.getCustomerRepository();
 		}
 
-	
-		/**
-		 * Return singleton instance of ArticleRepository.
-		 * 
-		 * @return singleton instance of ArticleRepository
-		 */
-		@Override
-		public ArticleRepository getArticleRepository() {
-			return dataRepositoryImpl.getArticleRepository();
-		}
-
-	
 		/**
 		 * Return singleton instance of OrderRepository.
 		 * 
 		 * @return singleton instance of OrderRepository
 		 */
+
 		@Override
 		public OrderRepository getOrderRepository() {
 			return dataRepositoryImpl.getOrderRepository();
 		}
 
-	
+		@Override
+		public OrderBuilder getOrderBuider() {
+			return new OrderBuilderImpl( getCustomerRepository(), getInventoryManager(), getOrderRepository() );
+		}
+
+		/**
+		 * Return singleton InventoryManager instance.
+		 * 
+		 * @return singleton InventoryManager instance.
+		 */
+
+		@Override
+		public InventoryManager getInventoryManager() {
+			return inventoryManager;
+		}
+
+
 		/**
 		 * Load data into repositories during Runtime launch,
 		 * Runtime.launch( (config, rt) -> { rt.loadData(); } );
 		 * 
 		 * @return chainable self reference.
 		 */
+
 		@Override
 		public Runtime loadData() {
 			config.get( KEY_DATASOURCE )
@@ -250,10 +272,13 @@ class RTE_Impl implements RTE {
 						long count = jsonData.importCustomerJSON( jsonFileName, getCustomerRepository() );
 						System.out.println( " + loaded " + count + " obj from: " + jsonFileName );
 					});
+					//
 					config.get( KEY_DATASOURCE_ARTICLE ).ifPresent( jsonFileName -> {
-						long count = jsonData.importArticleJSON( jsonFileName, getArticleRepository() );
+//						long count = jsonData.importArticleJSON( jsonFileName, getArticleRepository() );
+						long count = jsonData.importArticleJSON( jsonFileName, getInventoryManager() );
 						System.out.println( " + loaded " + count + " obj from: " + jsonFileName );
 					});
+					//
 					config.get( KEY_DATASOURCE_ORDER ).ifPresent( jsonFileName -> {
 						long count = jsonData.importOrderJSON( jsonFileName, getOrderRepository() );
 						System.out.println( " + loaded " + count + " obj from: " + jsonFileName );
@@ -261,29 +286,6 @@ class RTE_Impl implements RTE {
 			});
 			return this;
 		}
-		
-		/**
-		 * Return singleton instance of OrderBuilder.
-		 * 
-		 * @return singleton instance of OrderBuilder
-		 */
 
-		@Override
-		public OrderBuilder getOrderBuider() {
-			// TODO Auto-generated method stub
-			return new OrderBuilderImpl( getCustomerRepository(), getArticleRepository(), getOrderRepository() );
-		}
-		
-		/**
-		 * Return singleton instance of InventoryManager.
-		 * 
-		 * @return singleton instance of InventoryManager.
-		 */
-		
-		@Override
-		public InventoryManager getInventoryManager() {
-			// TODO Auto-generated method stub
-			return null;
-		}
 	}
 }

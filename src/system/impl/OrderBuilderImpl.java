@@ -3,13 +3,14 @@ package system.impl;
 import system.DataRepository.CustomerRepository;
 
 import datamodel.Article;
+import datamodel.Currency;
 import datamodel.Customer;
 import datamodel.Order;
-import system.DataRepository.ArticleRepository;
 import system.DataRepository.OrderRepository;
+import system.Calculator;
+import system.Formatter;
 import system.InventoryManager;
 import system.OrderBuilder;
-
 
 /**
  * Singleton component that builds orders and stores them in the
@@ -31,12 +32,14 @@ class OrderBuilderImpl implements OrderBuilder{
 	 */
 	private final CustomerRepository customerRepository;
 	//
-	private final ArticleRepository articleRepository;
-	//
 	private final OrderRepository orderRepository;
 	// 
-	private final InventoryManager inventoryManager = new InventoryManagerMOCK();
-
+	private final InventoryManager inventoryManager ;
+	//
+	private final Calculator calculator;
+	//
+	private final Formatter formatter;
+	
 	/**
 	 * Provide access to RTE OrderBuilder singleton instance (singleton pattern).
 	 * 
@@ -45,7 +48,7 @@ class OrderBuilderImpl implements OrderBuilder{
 	 */
 	OrderBuilder getOrderBuilder() {
 		if( orderBuilder == null ) {
-			orderBuilder = new OrderBuilderImpl( customerRepository, articleRepository, orderRepository );
+			orderBuilder = new OrderBuilderImpl( customerRepository, inventoryManager, orderRepository );
 		}
 		return orderBuilder;
 	}
@@ -57,10 +60,12 @@ class OrderBuilderImpl implements OrderBuilder{
 	 * @param runtime dependency injected from where repository
 	 * dependencies are resolved.
 	 */
-	OrderBuilderImpl( CustomerRepository customerRepository, ArticleRepository articleRepository, OrderRepository orderRepository ) {
+	OrderBuilderImpl( CustomerRepository customerRepository, InventoryManager inventoryManager, OrderRepository orderRepository ) {
 		this.customerRepository = customerRepository;
-		this.articleRepository = articleRepository;
+		this.inventoryManager = inventoryManager;
 		this.orderRepository = orderRepository;
+		this.calculator = new CalculatorImpl();
+		this.formatter = new PrinterImpl(calculator).createFormatter();
 	}
 
 
@@ -71,12 +76,20 @@ class OrderBuilderImpl implements OrderBuilder{
 	 * @return chainable self-reference
 	 */
 	public boolean accept( Order order ) {
-		// TODO: validate order
-		boolean validOrder = inventoryManager.isFillable( order );
-		if ( validOrder ) {
-			orderRepository.save( order );
+		long orderValue = calculator.calculateValue( order );
+		//
+		boolean isFillable = inventoryManager.isFillable( order );
+		if( isFillable && (
+				isFillable = inventoryManager.fill( order )
+		) ) {
+			StringBuffer fmtValue = formatter.fmtPaddedPrice( orderValue, 12, ' ', Currency.NONE );
+			System.out.println( "Order: " + order.getId() + " filled:" + fmtValue.toString() );
+			orderRepository.save( order );	// save filled order
+		} else {
+			StringBuffer fmtValue = formatter.fmtPrice( orderValue, Currency.NONE );
+			System.err.println( "Order: " + order.getId() + " is not fillable from current inventory: " + fmtValue.toString() );
 		}
-		return validOrder;
+		return isFillable;
 	}
 
 
@@ -91,28 +104,33 @@ class OrderBuilderImpl implements OrderBuilder{
 		/*
 		 * Look up customers from CustomerRepository.
 		 */
-		Customer eric = customerRepository.findById( 892474 ).get();
-		Customer anne = customerRepository.findById( 643270 ).get();
-		Customer tim = customerRepository.findById( 286516 ).get();
-		Customer nadine = customerRepository.findById( 412396 ).get();
-		Customer khaled = customerRepository.findById( 456454 ).get();
-		Customer lena = customerRepository.findById( 556849 ).get();
-		Customer max = customerRepository.findById( 482596 ).get();
-		Customer brigitte = customerRepository.findById( 660380 ).get();
-		Customer joel = customerRepository.findById( 582596 ).get();
+
+		CustomerRepository crep = customerRepository;
+
+		Customer eric = crep.findById( 892474 ).get();
+		Customer anne = crep.findById( 643270 ).get();
+		Customer tim = crep.findById( 286516 ).get();
+		Customer nadine = crep.findById( 412396 ).get();
+		Customer khaled = crep.findById( 456454 ).get();
+		Customer lena = crep.findById( 556849 ).get();
+		Customer max = crep.findById( 482596 ).get();
+		Customer brigitte = crep.findById( 660380 ).get();
+		Customer joel = crep.findById( 582596 ).get();
 
 		/*
 		 * Look up articles from ArticleRepository.
 		 */
-		Article tasse = articleRepository.findById( "SKU-458362" ).get();
-		Article becher = articleRepository.findById( "SKU-693856" ).get();
-		Article kanne = articleRepository.findById( "SKU-518957" ).get();
-		Article teller = articleRepository.findById( "SKU-638035" ).get();
-		Article buch_Java = articleRepository.findById( "SKU-278530" ).get();
-		Article buch_OOP = articleRepository.findById( "SKU-425378" ).get();
-		Article pfanne = articleRepository.findById( "SKU-300926" ).get();
-		Article helm = articleRepository.findById( "SKU-663942" ).get();
-		Article karte = articleRepository.findById( "SKU-583978" ).get();
+		InventoryManager arep = inventoryManager;
+
+		Article tasse = arep.findById( "SKU-458362" ).get();
+		Article becher = arep.findById( "SKU-693856" ).get();
+		Article kanne = arep.findById( "SKU-518957" ).get();
+		Article teller = arep.findById( "SKU-638035" ).get();
+		Article buch_Java = arep.findById( "SKU-278530" ).get();
+		Article buch_OOP = arep.findById( "SKU-425378" ).get();
+		Article pfanne = arep.findById( "SKU-300926" ).get();
+		Article helm = arep.findById( "SKU-663942" ).get();
+		Article karte = arep.findById( "SKU-583978" ).get();
 
 		/*
 		 * Build orders.
@@ -214,12 +232,12 @@ class OrderBuilderImpl implements OrderBuilder{
 		accept( o4450 );
 		accept( o6173 );	// total value (all orders):  |   642.70€|   76.78€|
 		//
-		accept( o6174 );
-		accept( o6175 );
-		accept( o6176 );
-		accept( o6177 );
-		accept( o6178 );
-		accept( o6179 );	// total value (all orders):  | 1,414.73€|  176.40€|
+//		accept( o6174 );
+//		accept( o6175 );
+//		accept( o6176 );
+//		accept( o6177 );
+//		accept( o6178 );
+//		accept( o6179 );	// total value (all orders):  | 1,414.73€|  176.40€|
 
 		return this;
 	}

@@ -159,14 +159,6 @@ public interface RTE {
 
 
 		/**
-		 * Return singleton instance of ArticleRepository.
-		 * 
-		 * @return singleton instance of ArticleRepository
-		 */
-		ArticleRepository getArticleRepository();
-
-
-		/**
 		 * Return singleton instance of OrderRepository.
 		 * 
 		 * @return singleton instance of OrderRepository
